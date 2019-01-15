@@ -1,4 +1,4 @@
-
+#include "nse_utility.h"
 
 
 void nseU_setbfield(lua_State *L, int idx, const char *field, int b)

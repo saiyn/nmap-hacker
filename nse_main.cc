@@ -1,12 +1,17 @@
-
+#include "nse_utility.h"
 #include "Target.h"
+#include "util.h"
 
 
 #define NSE_PARALLELISM   "NSE_PARALLELISM"
 #define NSE_CURRENT_HOSTS "NSE_CURRENT_HOSTS"
 #define NSE_MAIN	  "NSE_MAIN"
 
-#define 0
+
+#define MAXPATHLEN (2048)
+
+
+#if 0
 
 static void set_nmap_libraries(lua_State *L)
 {
@@ -58,7 +63,7 @@ static int init_main(lua_State *L)
 	//if(nmap_fetchfile(path, sizeof(path), "nse_main.lua") != 1)
 	//	luaL_error(L, "could not load nse_main.lua:%s", lua_tostring(L, -1));
 
-	sprintf(path, "nse_main.lua");
+	sprintf(path, "nselib/nse_main.lua");
 
 	if(luaL_loadfile(L, path) != 0)
 		luaL_error(L, "could not load nse_main.lua:%s", lua_tostring(L, -1));
@@ -83,7 +88,7 @@ static int init_main(lua_State *L)
 }
 
 
-
+static lua_State *L_NSE = NULL;
 
 
 void open_nse(void)
@@ -93,16 +98,12 @@ void open_nse(void)
 		L_NSE = luaL_newstate();
 		if(!L_NSE){
 			perror("failed to oopen lua\n");
-			return -1;
 		}
-
-		
-
 
 		lua_settop(L_NSE, 0);
 
-		lua_pushfunction(L_NSE, init_main);
-		lua_pushlightuserdata(L_NSE, &o.chosenScripts);
+		lua_pushcfunction(L_NSE, init_main);
+		lua_pushlightuserdata(L_NSE, &o.scripts);
 
 		if(lua_pcall(L_NSE, 1, 0, 1)){
 			fprintf(stderr, "%s: failed to initialize the script engine by running init_main()\n");
@@ -130,7 +131,7 @@ static int run_main(lua_State *L)
 
 	int targets_table = lua_gettop(L);
 
-	lua_getfield(L, LUA_REGISTRYINDEX, NSE_CUREENT_HOSTS);
+	lua_getfield(L, LUA_REGISTRYINDEX, NSE_CURRENT_HOSTS);
 
 	int current_hosts = lua_gettop(L);
 
@@ -144,7 +145,7 @@ static int run_main(lua_State *L)
 		//set_hostinfo(L, target);
 		lua_rawseti(L, targets_table, lua_rawlen(L, targets_table) + 1);
 
-		if(Targetname != NULL && strcmp(TargetName, "") != 0){
+		if(TargetName != NULL && strcmp(TargetName, "") != 0){
 			lua_pushstring(L, TargetName);
 			lua_pushlightuserdata(L, target);
 			lua_rawset(L, current_hosts); /* add to NSE_CURRENT_HOSTS */
@@ -174,12 +175,6 @@ void script_scan(std::vector<Target *> &targets)
 
 	lua_settop(L_NSE, 0);
 }
-
-
-
-
-
-
 
 
 

@@ -1,4 +1,4 @@
-
+#include "nse_utility.h"
 
 
 int luaopen_nmap(lua_State *L)

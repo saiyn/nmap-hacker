@@ -4,10 +4,11 @@
 #include <vector>
 
 
+
 class Target;
 
 
-void open_nse(void)
+void open_nse(void);
 
 
 

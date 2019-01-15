@@ -1,10 +1,11 @@
+#include "util.h"
 #include "Target.h"
 
 
 
 Target::Target()
 {
-	targetname = NULL;
+	targetname = "saiyn-lenovo";
 }
 
 
