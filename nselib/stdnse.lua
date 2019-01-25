@@ -1,18 +1,16 @@
 local _G = require "_G"
 
-local table = require "os"
+local table = require "table"
 
 local pack = table.pack
 
-
-_ENV = require "strict" {};
 
 
 function module(name, ...)
 	local env = {};
 	env._NAME = name;
 	env._PACKAGE = name:match("(.+)%.[^.]+$");
-	env_.M = env;
+	env._M = env;
 	local mods = pack(...);
 	for i=1, mods.n do
 		mods[i](env)

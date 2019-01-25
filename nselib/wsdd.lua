@@ -1,4 +1,4 @@
-local bin = require "bin"
+--local bin = require "bin"
 local stdnse = require "stdnse"
 local table = require "table"
 _ENV = stdnse.module("wsdd", stdnse.seeall)
@@ -59,13 +59,13 @@ Util = {
   --- Creates a UUID
   --
   -- @return uuid string containing a uuid
-  generateUUID = function()
-    local rnd_bytes = select(2, bin.unpack( "H16", openssl.rand_bytes( 16 ) ) ):lower()
-
-    return ("%s-%s-%s-%s-%s"):format( rnd_bytes:sub(1, 8),
-    rnd_bytes:sub(9, 12), rnd_bytes:sub( 13, 16 ), rnd_bytes:sub( 17, 20 ),
-    rnd_bytes:sub(21, 32) )
-  end,
+  --generateUUID = function()
+    --local rnd_bytes = select(2, bin.unpack( "H16", openssl.rand_bytes( 16 ) ) ):lower()
+--
+  --  return ("%s-%s-%s-%s-%s"):format( rnd_bytes:sub(1, 8),
+    --rnd_bytes:sub(9, 12), rnd_bytes:sub( 13, 16 ), rnd_bytes:sub( 17, 20 ),
+    --rnd_bytes:sub(21, 32) )
+ -- end,
 
   --- Retrieves a probe from the probes table by name
   --
@@ -82,7 +82,7 @@ Util = {
 
   getProbes = function() return probes end,
 
-  sha1sum = function(data) return openssl.sha1(data) end
+  --sha1sum = function(data) return openssl.sha1(data) end
 
 }
 
@@ -168,7 +168,9 @@ Comm = {
     local status, err
 
     -- replace all instances of #uuid# in the probe
-    local probedata = self.probe.data:gsub("#uuid#", Util.generateUUID())
+    --local probedata = self.probe.data:gsub("#uuid#", Util.generateUUID())
+    local probedata = self.probe.data
+
 
     if ( self.mcast ) then
       self.socket = nmap.new_socket("udp")
@@ -239,7 +241,8 @@ Comm = {
       else
         status, response = Decoders["error"](data)
         output = response
-        id = Util.sha1sum(data)
+        --id = Util.sha1sum(data)
+	id = "fackmsgid"
       end
 
       if ( self.mcast and not(probe_matches[id]) ) then
@@ -298,7 +301,7 @@ Helper = {
   -- @return matches table containing responses, suitable for printing using
   --         the <code>stdnse.format_output</code> function
   discoverServices = function( self, probename )
-    if ( not(HAVE_SSL) ) then return false, "The wsdd library requires OpenSSL" end
+ --   if ( not(HAVE_SSL) ) then return false, "The wsdd library requires OpenSSL" end
 
     local comm = Comm:new(self.host, self.port, self.mcast)
     local probe = Util.getProbeByName(probename)

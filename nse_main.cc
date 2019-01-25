@@ -1,6 +1,7 @@
 #include "nse_utility.h"
 #include "Target.h"
 #include "util.h"
+#include "nse_debug.h"
 
 
 #define NSE_PARALLELISM   "NSE_PARALLELISM"
@@ -66,7 +67,12 @@ static int init_main(lua_State *L)
 	sprintf(path, "nselib/nse_main.lua");
 
 	if(luaL_loadfile(L, path) != 0)
-		luaL_error(L, "could not load nse_main.lua:%s", lua_tostring(L, -1));
+		printf("could not load nse_main.lua:%s\n", lua_tostring(L,-1));
+		//luaL_error(L, "could not load nse_main.lua:%s", lua_tostring(L, -1));
+
+
+	std::cout << "saiyn: load " << path << "success" << std::endl;
+
 
 	/**
 	 * The first argument to the NSE main lua code is the private nse
@@ -83,8 +89,10 @@ static int init_main(lua_State *L)
 	for(std::vector<std::string>::iterator si = rules->begin(); si != rules->end(); si++)
 		nseU_appendfstr(L, -1, "%s", si->c_str());
 
-	lua_call(L, 2, 1);/* returns the NSE main function by nse_main.lua */
+	lua_call(L, 1, 1);/* returns the NSE main function by nse_main.lua */
 	lua_setfield(L, LUA_REGISTRYINDEX, NSE_MAIN);
+
+	return 0;
 }
 
 
@@ -106,10 +114,16 @@ void open_nse(void)
 		lua_pushlightuserdata(L_NSE, &o.scripts);
 
 		if(lua_pcall(L_NSE, 1, 0, 1)){
-			fprintf(stderr, "%s: failed to initialize the script engine by running init_main()\n");
+			fprintf(stderr, "failed to initialize the script engine by running init_main():%s\n",
+					lua_tostring(L_NSE,-1));
 			lua_settop(L_NSE, 0);
 		}
 	}
+}
+
+static void set_hostinfo(lua_State *L, Target *currenths)
+{
+	nseU_setsfield(L, -1, "ip", currenths->targetipstr());
 }
 
 
@@ -123,6 +137,14 @@ static int run_main(lua_State *L)
 
 	lua_getfield(L, LUA_REGISTRYINDEX, NSE_MAIN);
 	assert(lua_isfunction(L, -1));
+
+	assert(targets->size());
+
+	std::cout << "saiyn: targets: " << targets->front()->targetipstr() << std::endl;
+
+	std::cout << "saiyn: current top: " << lua_gettop(L) << std::endl;
+
+	//lua_state_dump(L);
 
 	/**
 	 * The argument to the NSE main function is the list of targets.
@@ -142,7 +164,7 @@ static int run_main(lua_State *L)
 		const char *targetipstr = target->targetipstr();
 
 		lua_newtable(L);
-		//set_hostinfo(L, target);
+		set_hostinfo(L, target);
 		lua_rawseti(L, targets_table, lua_rawlen(L, targets_table) + 1);
 
 		if(TargetName != NULL && strcmp(TargetName, "") != 0){
@@ -155,6 +177,11 @@ static int run_main(lua_State *L)
 		lua_pushlightuserdata(L, target);
 		lua_rawset(L, current_hosts);	/* add to NSE_CURRENT_HOSTS */
 	}
+
+	std::cout << "saiyn: then top " << lua_gettop(L) << std::endl;
+
+	//lua_state_dump(L);
+
 	lua_settop(L, targets_table);
 
 	lua_call(L, 1, 0);
